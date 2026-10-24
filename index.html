@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS CALC | Scientific Calculator</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --bg: #080b18;
+    --panel: #11162a;
+    --button: #202742;
+    --purple: #9b5cff;
+    --cyan: #35e7ff;
+    --text: #f3f5ff;
+    --muted: #929bbd;
+    --danger: #ff5277;
+}
+
+body {
+    min-height: 100vh;
+    padding: 25px 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(ellipse at 10% 10%, #29205b 0%, transparent 38%),
+        radial-gradient(ellipse at 90% 90%, #103b50 0%, transparent 38%),
+        var(--bg);
+}
+
+.app {
+    width: 100%;
+    max-width: 1000px;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(230px, 0.8fr);
+    gap: 22px;
+}
+
+.calculator,
+.history-panel {
+    background: rgba(17, 22, 42, 0.94);
+    border: 1px solid #303654;
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.3);
+    min-width: 0;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 24px;
+}
+
+.logo {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: var(--cyan);
+}
+
+.subtitle {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 5px;
+    letter-spacing: 2px;
+}
+
+.badge {
+    color: var(--cyan);
+    border: 1px solid #245565;
+    background: #102a39;
+    padding: 7px 11px;
+    border-radius: 20px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.display {
+    background: linear-gradient(135deg, #151d35, #201738);
+    border: 1px solid #383454;
+    border-radius: 17px;
+    padding: 20px;
+    margin-bottom: 18px;
+    text-align: right;
+    overflow: hidden;
+}
+
+.expression {
+    color: var(--muted);
+    min-height: 22px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+.result {
+    font-size: clamp(30px, 5vw, 43px);
+    font-weight: 600;
+    margin-top: 12px;
+    overflow-wrap: anywhere;
+}
+
+.status {
+    color: var(--cyan);
+    font-size: 11px;
+    margin-top: 10px;
+    min-height: 15px;
+}
+
+.settings {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.settings label {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+select,
+.small-btn {
+    background: var(--button);
+    color: var(--text);
+    border: 1px solid #39415e;
+    padding: 8px 11px;
+    border-radius: 9px;
+    cursor: pointer;
+}
+
+.keys {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 9px;
+}
+
+button.key {
+    min-height: 53px;
+    border: 1px solid #303956;
+    border-radius: 12px;
+    background: var(--button);
+    color: var(--text);
+    font-size: 17px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s, filter 0.15s;
+}
+
+button.key:hover {
+    border-color: var(--purple);
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+}
+
+button.key:active {
+    transform: scale(0.96);
+}
+
+button.key:focus-visible,
+select:focus-visible,
+.small-btn:focus-visible {
+    outline: 2px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+.operator {
+    color: #d8baff !important;
+    background: #2b2047 !important;
+    border-color: #483568 !important;
+}
+
+.clear {
+    background: #4a2039 !important;
+    color: #ff9db8 !important;
+}
+
+.equal {
+    background: linear-gradient(120deg, #9857ff, #12cbe8) !important;
+    color: white !important;
+    border: none !important;
+}
+
+.history-panel h2 {
+    font-size: 19px;
+    margin-bottom: 7px;
+}
+
+.history-description {
+    color: var(--muted);
+    font-size: 12px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 390px;
+    overflow-y: auto;
+}
+
+.history-item {
+    padding: 13px;
+    border: 1px solid #303654;
+    background: #171d33;
+    border-radius: 11px;
+    overflow-wrap: anywhere;
+    font-size: 13px;
+}
+
+.history-item .old-expression {
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.history-item .old-result {
+    color: var(--cyan);
+    font-weight: 700;
+}
+
+.empty {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 15px 0;
+}
+
+.history-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.small-btn:hover {
+    border-color: var(--cyan);
+}
+
+.footer {
+    text-align: center;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+    .app {
+        grid-template-columns: 1fr;
+        max-width: 480px;
+    }
+
+    .calculator,
+    .history-panel {
+        padding: 18px;
+        border-radius: 19px;
+    }
+
+    button.key {
+        min-height: 48px;
+        font-size: 15px;
+    }
+
+    .logo {
+        font-size: 22px;
+    }
+}
+
+@media (max-width: 360px) {
+    .keys {
+        gap: 5px;
+    }
+
+    button.key {
+        min-height: 43px;
+        font-size: 13px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<main class="app">
+
+<section class="calculator">
+
+    <header class="header">
+        <div>
+            <div class="logo">NEXUS <span>CALC</span></div>
+            <div class="subtitle">SCIENTIFIC CALCULATOR</div>
+        </div>
+        <div class="badge">● READY</div>
+    </header>
+
+    <div class="display" aria-live="polite">
+        <div class="expression" id="expression">Welcome to Nexus Calc</div>
+        <div class="result" id="result">0</div>
+        <div class="status" id="status">Ready to calculate</div>
+    </div>
+
+    <div class="settings">
+        <label for="angleMode">Angle mode
+            <select id="angleMode">
+                <option value="DEG">Degrees</option>
+                <option value="RAD">Radians</option>
+            </select>
+        </label>
+
+        <button class="small-btn" id="copyResult" type="button">
+            Copy result
+        </button>
+    </div>
+
+    <div class="keys" id="keys">
+
+        <button class="key clear" data-action="clear">AC</button>
+        <button class="key operator" data-action="delete">DEL</button>
+        <button class="key operator" data-value="(">(</button>
+        <button class="key operator" data-value=")">)</button>
+        <button class="key operator" data-value="/">÷</button>
+
+        <button class="key operator" data-function="sin">sin</button>
+        <button class="key operator" data-function="cos">cos</button>
+        <button class="key operator" data-function="tan">tan</button>
+        <button class="key operator" data-function="sqrt">√</button>
+        <button class="key operator" data-value="*">×</button>
+
+        <button class="key" data-value="7">7</button>
+        <button class="key" data-value="8">8</button>
+        <button class="key" data-value="9">9</button>
+        <button class="key operator" data-value="^">xʸ</button>
+        <button class="key operator" data-value="-">−</button>
+
+        <button class="key" data-value="4">4</button>
+        <button class="key" data-value="5">5</button>
+        <button class="key" data-value="6">6</button>
+        <button class="key operator" data-value="%">mod</button>
+        <button class="key operator" data-value="+">+</button>
+
+        <button class="key" data-value="1">1</button>
+        <button class="key" data-value="2">2</button>
+        <button class="key" data-value="3">3</button>
+        <button class="key operator" data-function="log">log</button>
+        <button class="key equal" data-action="equals">=</button>
+
+        <button class="key" data-value="0">0</button>
+        <button class="key" data-value=".">.</button>
+        <button class="key operator" data-value="pi">π</button>
+        <button class="key operator" data-function="ln">ln</button>
+        <button class="key operator" data-value="^">^</button>
+
+        <button class="key operator" data-function="square">x²</button>
+        <button class="key operator" data-function="factorial">n!</button>
+        <button class="key operator" data-value="e">e</button>
+        <button class="key operator" data-value="/">÷</button>
+        <button class="key operator" data-action="sign">+/−</button>
+
+    </div>
+
+    <div class="footer">
+        Built with HTML, CSS & JavaScript<br>
+        Advanced Calculator Project
+    </div>
+
+</section>
+
+<aside class="history-panel">
+
+    <h2>Calculation History</h2>
+
+    <p class="history-description">
+        Your recent calculations appear here.
+        Results remain available during this browser session.
+    </p>
+
+    <div class="history-list" id="historyList">
+        <div class="empty">No calculations yet.</div>
+    </div>
+
+    <div class="history-actions">
+        <button class="small-btn" id="clearHistory" type="button">
+            Clear history
+        </button>
+    </div>
+
+</aside>
+
+</main>
+
+<script>
+"use strict";
+
+const expressionDisplay = document.getElementById("expression");
+const resultDisplay = document.getElementById("result");
+const statusDisplay = document.getElementById("status");
+const historyList = document.getElementById("historyList");
+const angleMode = document.getElementById("angleMode");
+
+let expression = "";
+let currentResult = 0;
+let justCalculated = false;
+let history = [];
+
+function updateDisplay() {
+    expressionDisplay.textContent = expression || "Enter a calculation";
+    resultDisplay.textContent = expression || "0";
+}
+
+function showStatus(message, isError = false) {
+    statusDisplay.textContent = message;
+    statusDisplay.style.color = isError ? "#ff5277" : "#35e7ff";
+}
+
+function clearCalculator() {
+    expression = "";
+    currentResult = 0;
+    justCalculated = false;
+    updateDisplay();
+    showStatus("Calculator cleared");
+}
+
+function addValue(value) {
+    if (justCalculated && /[0-9.πe]/.test(value)) {
+        expression = "";
+    }
+
+    justCalculated = false;
+    expression += value;
+    updateDisplay();
+    showStatus("Ready to calculate");
+}
+
+function addFunction(name) {
+    if (justCalculated) {
+        expression = "";
+        justCalculated = false;
+    }
+
+    const functions = {
+        sin: "sin(",
+        cos: "cos(",
+        tan: "tan(",
+        sqrt: "sqrt(",
+        log: "log(",
+        ln: "ln(",
+        square: "^2",
+        factorial: "!"
+    };
+
+    if (name === "square" || name === "factorial") {
+        if (!expression) {
+            showStatus("Enter a number first", true);
+            return;
+        }
+        expression += functions[name];
+    } else {
+        expression += functions[name];
+    }
+
+    updateDisplay();
+}
+
+function tokenize(input) {
+    const normalized = input
+        .replace(/π/g, "pi")
+        .replace(/×/g, "*")
+        .replace(/÷/g, "/")
+        .replace(/\s/g, "");
+
+    const pattern =
+        /(?:\d+(?:\.\d*)?|\.\d+)|(?:sin|cos|tan|sqrt|log|ln|pi|e)|(?:[()+\-*/%^!])/gy;
+
+    const tokens = [];
+    let position = 0;
+
+    while (position < normalized.length) {
+        pattern.lastIndex = position;
+        const match = pattern.exec(normalized);
+
+        if (!match) {
+            throw new Error("Invalid character in expression");
+        }
+
+        tokens.push(match[0]);
+        position = pattern.lastIndex;
+    }
+
+    return tokens;
+}
+
+function factorial(number) {
+    if (!Number.isInteger(number) || number < 0 || number > 170) {
+        throw new Error("Factorial requires an integer from 0 to 170");
+    }
+
+    let answer = 1;
+
+    for (let i = 2; i <= number; i++) {
+        answer *= i;
+    }
+
+    return answer;
+}
+
+function calculate(input) {
+    const tokens = tokenize(input);
+    let position = 0;
+
+    if (tokens.length === 0) {
+        throw new Error("Enter an expression");
+    }
+
+    function peek() {
+        return tokens[position];
+    }
+
+    function consume() {
+        return tokens[position++];
+    }
+
+    function parsePrimary() {
+        const token = consume();
+
+        if (token === undefined) {
+            throw new Error("Incomplete expression");
+        }
+
+        if (token === "+" || token === "-") {
+            const value = parsePrimary();
+            return token === "-" ? -value : value;
+        }
+
+        if (token === "(") {
+            const value = parseAddSubtract();
+
+            if (consume() !== ")") {
+                throw new Error("Missing closing parenthesis");
+            }
+
+            return value;
+        }
+
+        if (["sin", "cos", "tan", "sqrt", "log", "ln"].includes(token)) {
+            if (consume() !== "(") {
+                throw new Error("Use " + token + "(number)");
+            }
+
+            const value = parseAddSubtract();
+
+            if (consume() !== ")") {
+                throw new Error("Missing closing parenthesis");
+            }
+
+            switch (token) {
+                case "sin":
+                    return Math.sin(toRadians(value));
+                case "cos":
+                    return Math.cos(toRadians(value));
+                case "tan":
+                    if (Math.abs(Math.cos(toRadians(value))) < 1e-12) {
+                        throw new Error("Tangent is undefined at this angle");
+                    }
+                    return Math.tan(toRadians(value));
+                case "sqrt":
+                    if (value < 0) throw new Error("Square root of a negative number");
+                    return Math.sqrt(value);
+                case "log":
+                    if (value <= 0) throw new Error("Log requires a positive number");
+                    return Math.log10(value);
+                case "ln":
+                    if (value <= 0) throw new Error("Ln requires a positive number");
+                    return Math.log(value);
+            }
+        }
+
+        if (token === "pi") return Math.PI;
+        if (token === "e") return Math.E;
+
+        const value = Number(token);
+
+        if (!Number.isFinite(value)) {
+            throw new Error("Invalid number");
+        }
+
+        return value;
+    }
+
+    function parsePostfix() {
+        let value = parsePrimary();
+
+        while (peek() === "!") {
+            consume();
+            value = factorial(value);
+        }
+
+        return value;
+    }
+
+    function parsePower() {
+        let value = parsePostfix();
+
+        if (peek() === "^") {
+            consume();
+            value = Math.pow(value, parseUnary());
+        }
+
+        return value;
+    }
+
+    function parseUnary() {
+        if (peek() === "+") {
+            consume();
+            return parseUnary();
+        }
+
+        if (peek() === "-") {
+            consume();
+            return -parseUnary();
+        }
+
+        return parsePower();
+    }
+
+    function parseMultiplyDivide() {
+        let value = parseUnary();
+
+        while (["*", "/", "%"].includes(peek())) {
+            const operator = consume();
+            const next = parseUnary();
+
+            if ((operator === "/" || operator === "%") && next === 0) {
+                throw new Error("Division or modulus by zero");
+            }
+
+            if (operator === "*") value *= next;
+            if (operator === "/") value /= next;
+            if (operator === "%") value %= next;
+        }
+
+        return value;
+    }
+
+    function parseAddSubtract() {
+        let value = parseMultiplyDivide();
+
+        while (peek() === "+" || peek() === "-") {
+            const operator = consume();
+            const next = parseMultiplyDivide();
+
+            value = operator === "+" ? value + next : value - next;
+        }
+
+        return value;
+    }
+
+    const answer = parseAddSubtract();
+
+    if (position !== tokens.length) {
+        throw new Error("Check your expression");
+    }
+
+    if (!Number.isFinite(answer)) {
+        throw new Error("Result is outside the supported range");
+    }
+
+    return answer;
+}
+
+function toRadians(value) {
+    return angleMode.value === "DEG"
+        ? value * Math.PI / 180
+        : value;
+}
+
+function formatNumber(number) {
+    if (Object.is(number, -0)) number = 0;
+
+    return Number(number.toPrecision(12)).toString();
+}
+
+function showHistory() {
+    historyList.replaceChildren();
+
+    if (history.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent = "No calculations yet.";
+        historyList.appendChild(empty);
+        return;
+    }
+
+    history.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "history-item";
+
+        const oldExpression = document.createElement("div");
+        oldExpression.className = "old-expression";
+        oldExpression.textContent = item.expression;
+
+        const oldResult = document.createElement("div");
+        oldResult.className = "old-result";
+        oldResult.textContent = "= " + item.result;
+
+        card.append(oldExpression, oldResult);
+        historyList.appendChild(card);
+    });
+}
+
+function evaluateExpression() {
+    if (!expression.trim()) {
+        showStatus("Enter a calculation first", true);
+        return;
+    }
+
+    const input = expression;
+
+    try {
+        const answer = calculate(input);
+        const formatted = formatNumber(answer);
+
+        history.unshift({
+            expression: input,
+            result: formatted
+        });
+
+        history = history.slice(0, 20);
+        showHistory();
+
+        expressionDisplay.textContent = input + " =";
+        expression = formatted;
+        resultDisplay.textContent = formatted;
+        currentResult = answer;
+        justCalculated = true;
+
+        showStatus("Calculation successful");
+    } catch (error) {
+        showStatus(error.message || "Invalid expression", true);
+    }
+}
+
+document.getElementById("keys").addEventListener("click", event => {
+    const button = event.target.closest("button");
+
+    if (!button) return;
+
+    if (button.dataset.action === "clear") {
+        clearCalculator();
+    } else if (button.dataset.action === "delete") {
+        expression = expression.slice(0, -1);
+        justCalculated = false;
+        updateDisplay();
+        showStatus("Last character deleted");
+    } else if (button.dataset.action === "equals") {
+        evaluateExpression();
+    } else if (button.dataset.action === "sign") {
+        if (expression && !Number.isNaN(Number(expression))) {
+            expression = String(-Number(expression));
+        } else if (!expression) {
+            expression = "-";
+        } else {
+            expression = "-(" + expression + ")";
+        }
+
+        justCalculated = false;
+        updateDisplay();
+    } else if (button.dataset.function) {
+        addFunction(button.dataset.function);
+    } else if (button.dataset.value !== undefined) {
+        const value = button.dataset.value;
+
+        if (value === "pi") {
+            addValue("π");
+        } else {
+            addValue(value);
+        }
+    }
+});
+
+document.getElementById("clearHistory").addEventListener("click", () => {
+    history = [];
+    showHistory();
+    showStatus("History cleared");
+});
+
+document.getElementById("copyResult").addEventListener("click", async () => {
+    try {
+        await navigator.clipboard.writeText(resultDisplay.textContent);
+        showStatus("Result copied");
+    } catch {
+        showStatus("Clipboard unavailable in this browser", true);
+    }
+});
+
+document.addEventListener("keydown", event => {
+    if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+    if (/^[0-9.]$/.test(event.key)) {
+        addValue(event.key);
+    } else if (["+", "-", "*", "/", "%", "^", "(", ")"].includes(event.key)) {
+        addValue(event.key);
+    } else if (event.key === "Enter" || event.key === "=") {
+        event.preventDefault();
+        evaluateExpression();
+    } else if (event.key === "Backspace") {
+        expression = expression.slice(0, -1);
+        justCalculated = false;
+        updateDisplay();
+    } else if (event.key === "Escape") {
+        clearCalculator();
+    }
+});
+
+showHistory();
+updateDisplay();
+</script>
+
+</body>
+</html>
